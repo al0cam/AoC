@@ -35,17 +35,26 @@ func absolute(number int) int {
 }
 
 func main() {
+	// blockOfText := readEverythingFromFile("dummyInput.txt")
 	blockOfText := readEverythingFromFile("input.txt")
 	total := 0
 
-	mulRegex, err := regexp.Compile(`mul\((?P<number1>\d{1,3}),(?P<number2>\d{1,3})\)`)
+	mulRegex, err := regexp.Compile(`(?:don\'t\(\))|(?:do\(\))|(?:mul\((?P<num1>\d{1,3}),(?P<num2>\d{1,3})\))`)
 	check(err)
 
 	matches := mulRegex.FindAllStringSubmatch(blockOfText, -1)
 
+	// by default it's true, however, if the command don't() is hit, then it's disabled until the next do()
+  permitToMultiply := true
 	for _, match := range matches {
-		fmt.Println(match[1], match[2])
-		total += convertToInteger(match[1]) * convertToInteger(match[2])
+		fmt.Println(match)
+		if match[0] == "don't()" {
+			permitToMultiply = false
+		} else if match[0] == "do()" {
+			permitToMultiply = true
+		} else if permitToMultiply {
+			total += convertToInteger(match[1]) * convertToInteger(match[2])
+		}
 	}
 
 	fmt.Println(total)
