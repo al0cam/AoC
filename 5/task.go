@@ -38,7 +38,7 @@ func readListFromFile(filename string) ([]rule, [][]int) {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-    var numList []int
+		var numList []int
 		if scanner.Text() == "" {
 			continue
 		}
@@ -58,32 +58,6 @@ func readListFromFile(filename string) ([]rule, [][]int) {
 	}
 
 	return rules, list
-}
-
-func insertBefore(toInsert int, insertBefore int, numList []int) []int {
-	newArray := numList
-	// maybe extract this logic into the method above
-	for i, num := range numList {
-		if insertBefore == num {
-			newArray = append(newArray, 0)
-			copy(newArray[i+1:], newArray[i:])
-			newArray[i] = toInsert
-		}
-	}
-	return newArray
-}
-
-func insertAfter(toInsert int, insertAfter int, numList []int) []int {
-	newArray := numList
-	// maybe extract this logic into the method above
-	for i, num := range numList {
-		if insertAfter == num {
-			newArray = append(newArray, 0)
-			copy(newArray[i+1:], newArray[i:])
-			newArray[i+1] = toInsert
-		}
-	}
-	return newArray
 }
 
 func contains(numberToBeContained int, array []int) bool {
@@ -108,7 +82,7 @@ func isRuleValid(rule rule, list []int) bool {
 	indexOfFirstNumber := getIndex(rule.firstNumber, list)
 	indexOfSecondNumber := getIndex(rule.secondNumber, list)
 	if indexOfSecondNumber < indexOfFirstNumber {
-    fmt.Println(rule, " is breaking the flow")
+		// fmt.Println(rule, " is breaking the flow")
 		return false
 	} else {
 		return true
@@ -125,14 +99,37 @@ func makeRelevantRules(allRules []rule, list []int) []rule {
 	return relevantRules
 }
 
-func isListWellOrdered(rules []rule, list []int) bool {
-	relevantRules := makeRelevantRules(rules, list)
+func isListWellOrdered(relevantRules []rule, list []int) bool {
 	for _, rule := range relevantRules {
 		if !isRuleValid(rule, list) {
 			return false
 		}
 	}
 	return true
+}
+
+func swapPlaces(number1 int, number2 int, list []int) []int {
+	indexOfFirstNumber := getIndex(number1, list)
+	indexOfSecondNumber := getIndex(number2, list)
+	swappedPlacesList := list
+	swappedPlacesList[indexOfFirstNumber] = number2
+	swappedPlacesList[indexOfSecondNumber] = number1
+	return swappedPlacesList
+}
+
+func fixTheList(relevantRules []rule, list []int) []int {
+	fixedList := list
+  numberOfRuns := 0
+	for !isListWellOrdered(relevantRules, list) {
+    numberOfRuns++
+    fmt.Println(numberOfRuns)
+		for _, rule := range relevantRules {
+			if !isRuleValid(rule, fixedList) {
+				fixedList = swapPlaces(rule.firstNumber, rule.secondNumber, list)
+			}
+		}
+	}
+	return fixedList
 }
 
 func getTheMiddleMan(numList []int) int {
@@ -151,14 +148,24 @@ func main() {
 	fmt.Println()
 
 	total := 0
+	totalOfCorrected := 0
 
 	for _, numList := range list {
-		fmt.Println(numList)
-		if isListWellOrdered(rules, numList) {
-      middleMan := getTheMiddleMan(numList)
-      fmt.Println(middleMan)
-			total +=middleMan
+		relevantRules := makeRelevantRules(rules, numList)
+		fmt.Println("rules: ", relevantRules)
+		fmt.Println("list: ", numList)
+		if isListWellOrdered(relevantRules, numList) {
+			middleMan := getTheMiddleMan(numList)
+			total += middleMan
+		} else {
+			newList := fixTheList(relevantRules, numList)
+			fmt.Println("newline: ", newList)
+			middleMan := getTheMiddleMan(newList)
+			fmt.Println(middleMan)
+			totalOfCorrected += middleMan
 		}
+		fmt.Println()
 	}
 	fmt.Println(total)
+	fmt.Println(totalOfCorrected)
 }
