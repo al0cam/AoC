@@ -21,13 +21,22 @@ fun getInvalidIdList(range: String): ArrayList<Long>{
         val iString = i.toString()
         val iLength = iString.length
 
-        if (iLength%2 != 0)
-            continue
+        for (substringLength in 1..iLength/2){
+            var subString = iString.substring(0, substringLength)
+            var splitBySubStringLength = iString.chunked(substringLength)
 
-        if (iString.endsWith(iString.substring(0, iLength/2)))
-            invalidIdList.add(i)
+            if(splitBySubStringLength.all { it.equals(subString) })
+            {
+               println("Substring Length: "+substringLength)
+               println("Invalid Number: "+i)
+
+                invalidIdList.add(i)
+                break
+            }
+
+        }
     }
-
+    println()
 
     return invalidIdList
 }
