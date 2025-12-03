@@ -1,9 +1,11 @@
+
 package org.example
 
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import kotlin.io.path.readText
 import kotlin.math.max
+import kotlin.math.pow
 
 fun readFile(fileName: String): ArrayList<String> {
     val strings: ArrayList<String> = ArrayList<String>()
@@ -22,35 +24,44 @@ fun readFile(fileName: String): ArrayList<String> {
 //
 //The total output joltage is the sum of the maximum joltage from each bank, so in this example, the total output joltage is 98 + 89 + 78 + 92 = 357.
 
-fun getMaxJolt(battery: String): Long{
-    var maxJolt: Long = 0
-    println("bat: "+ battery)
-    var batterySizeSequence = battery.map { it.digitToInt().toLong() }
-    var highestNumber = 0L
-    var highestNumberIndex = 0
-    var secondHighestNumber = 0L
+data class Battery(var value: Double, var index: Int){
+    companion object{
+        val EMPTY = Battery(value = 0.00, index = 0 )
+    }
+}
 
-    for (i in 0..(batterySizeSequence.size-2)) {
-        if (batterySizeSequence[i] > highestNumber)
-        {
-            highestNumber = batterySizeSequence[i]
-            highestNumberIndex = i
+fun getMaxJolt(battery: String): Double{
+    var maxJolt: Double = 0.00
+    println("bat: "+ battery)
+    var batterySizeSequence = battery.map { it.digitToInt().toDouble() }
+    val batteries = Array<Battery>(12) {Battery.EMPTY.copy()}
+
+    for (batIndex in 0..(batteries.size-1)){
+        val startingIndex = if (batIndex == 0) batIndex else batteries[batIndex-1].index
+        val endSpacer = 11 -batIndex
+        val endIndex = batterySizeSequence.size - endSpacer -1
+
+//        println("Bat index: $batIndex | startIndex: $startingIndex | endIndex: $endIndex")
+//        println("   InnerLoop")
+        for (i in startingIndex..endIndex) {
+//            print("      Index: $i | value: ${batterySizeSequence[i]} # ")
+            if (batterySizeSequence[i] > batteries[batIndex].value)
+            {
+//                println("      Setting value: ${batterySizeSequence[i]}")
+                batteries[batIndex].value = batterySizeSequence[i]
+                batteries[batIndex].index = i+1
+            }
         }
     }
-
-    for (i in highestNumberIndex+1..batterySizeSequence.size-1){
-        if (batterySizeSequence[i] > secondHighestNumber)
-            secondHighestNumber = batterySizeSequence[i]
-    }
-
     // find first biggest value which cant be at the end of an array
     // then start searching from that for second value
 
-    println("Max: "+highestNumber)
-    println("2nd Max: "+secondHighestNumber)
+//    batteries.forEach { println("value: ${it.value} | index: ${it.index}")}
 
-    maxJolt = highestNumber*10+secondHighestNumber
-    println("MaxJolt: "+ maxJolt)
+    batteries.forEachIndexed { index, battery -> battery.value = battery.value*10.00.pow((batteries.size-index-1).toDouble()) }
+    maxJolt = batteries.sumOf { it.value }
+    println()
+    println("MaxJolt: "+ maxJolt.toLong())
     println()
 
     return maxJolt
@@ -60,11 +71,12 @@ fun getMaxJolt(battery: String): Long{
 
 fun main() {
     val batteries = readFile("./src/main/resources/file.txt")
-    var joltSum: Long = 0
+    var joltSum: Double = 0.00
 
     batteries.forEach { joltSum+=getMaxJolt(it) }
 
-    println("JoltSum: "+joltSum)
+    println("JoltSum: "+joltSum.toLong())
 }
 
 //17346 done
+// 172981362045136 done
