@@ -29,22 +29,36 @@ fun readFile(fileName: String): Pair<ArrayList<Range>, ArrayList<Long>> {
     return Pair(ranges, ids)
 }
 
+fun consolidateRangesSorted(rangeList: MutableList<Range>) {
+    if (rangeList.size <= 1) return
+    rangeList.sortBy { it.start }
+    val consolidated = mutableListOf<Range>()
+    consolidated.add(rangeList[0])
+
+    for (i in 1 until rangeList.size) {
+        val currentRange = rangeList[i]
+        val lastConsolidated = consolidated.last()
+        if (currentRange.start <= lastConsolidated.end) {
+            lastConsolidated.end = maxOf(lastConsolidated.end, currentRange.end)
+        }
+        else {
+            consolidated.add(currentRange)
+        }
+    }
+
+    rangeList.clear()
+    rangeList.addAll(consolidated)
+}
 
 fun getFreshItemCount(rangeList: ArrayList<Range>, idList: ArrayList<Long>): Long {
     var freshItems = 0L
 
     val maxRangeEnding: Long = rangeList.maxOf { it.end }
     println("Max ending: $maxRangeEnding")
+    consolidateRangesSorted(rangeList)
 
-    for (id in idList) {
-        if (id >= maxRangeEnding)
-            continue
-        for (range in rangeList) {
-            if (range.start <= id && range.end >= id  ) {
-                freshItems+=1
-                break
-            }
-        }
+    for (range in rangeList) {
+        freshItems+= range.end - range.start + 1
     }
     return freshItems
 }
@@ -61,3 +75,4 @@ fun main() {
 }
 
 // 558
+// 344813017450467
