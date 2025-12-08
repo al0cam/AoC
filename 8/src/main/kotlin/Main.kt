@@ -27,6 +27,7 @@ fun findDistanceInSpace(from: Box, to: Box): Double {
     return sqrt(dx * dx + dy * dy + dz * dz)
 }
 
+
 class UnionFind(size: Int) {
     private val parent = IntArray(size) { it }
     private val rank = IntArray(size) { 0 }
@@ -66,7 +67,7 @@ class UnionFind(size: Int) {
     }
 }
 
-fun getConnectionResult(junctionBoxes: List<Box>): Int {
+fun getConnectionResult(junctionBoxes: List<Box>): Long {
     val n = junctionBoxes.size
     println("Processing $n boxes...")
 
@@ -88,43 +89,46 @@ fun getConnectionResult(junctionBoxes: List<Box>): Int {
     }
 
     val uf = UnionFind(n)
-
-    val K = 1000
-    val connectionsToProcess = minOf(connections.size, K)
-
-    println("\nProcessing first $connectionsToProcess connections...")
-
-    for (i in 0 until connectionsToProcess) {
+    var lastConnectionIdx = -1
+    for (i in connections.indices) {
         val connection = connections[i]
-        uf.union(connection.fromIdx, connection.toIdx)
+        val wasUnited = uf.union(connection.fromIdx, connection.toIdx)
 
-        if ((i + 1) % 100 == 0) {
-            println("Processed ${i + 1} connections...")
+        if (wasUnited) {
+
+            val numCircuits = uf.getCircuitSizes(n).size
+
+            if (numCircuits == 1) {
+                lastConnectionIdx = i
+                println("All boxes connected after processing ${i + 1} connections")
+                println("Last connection: Box ${connection.fromIdx} <-> Box ${connection.toIdx}")
+                println("Distance: ${String.format("%.2f", connection.distance)}")
+                break
+            }
+
+            if ((i + 1) % 100 == 0) {
+                println("Processed ${i + 1} connections, $numCircuits circuits remaining...")
+            }
         }
     }
 
+    val lastConnection = connections[lastConnectionIdx]
+    val x1 = junctionBoxes[lastConnection.fromIdx].x.toLong()
+    val x2 = junctionBoxes[lastConnection.toIdx].x.toLong()
+    val result = x1 * x2
 
-    val circuitSizes = uf.getCircuitSizes(n).sortedDescending()
-
-    println("\nAll circuit sizes (top 20): ${circuitSizes.take(20)}")
-    println("Number of circuits: ${circuitSizes.size}")
-    println("Top 3 circuits: ${circuitSizes.take(3)}")
-
-
-    val top3 = circuitSizes.take(3)
-    val result = top3[0] * top3[1] * top3[2]
-
-    println("Result: ${top3[0]} × ${top3[1]} × ${top3[2]} = $result")
+    println("\nLast connection X coordinates: $x1 and $x2")
 
     return result
 }
 
 fun main() {
     val junctionBoxes = readFile("./src/main/resources/file.txt")
-    println("Loaded ${junctionBoxes.size} junction boxes")
+    println("Loaded ${junctionBoxes.size} junction boxes\n")
 
     val result = getConnectionResult(junctionBoxes)
-    println("\nFinal result: $result")
+    println(" RESULT: $result")
 }
 
-
+// 50760
+// 3206508875
