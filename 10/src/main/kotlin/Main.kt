@@ -166,10 +166,174 @@ fun getFewestPresses(machines: ArrayList<ManualLine>): Int {
     return totalPresses
 }
 
+
+fun isButtonAvailable(buttonIndex: Int, mask: Int): Boolean {
+    return (mask and (1 shl buttonIndex)) > 0
+}
+
+/**
+ * Generates the next combination of presses [x0, x1, ..., xm-1] such that sum(xi) = n.
+ * The logic iterates through all non-negative integer partitions of 'n' into 'm' parts.
+ *
+ * @param combinations Mutable list of integers representing [x0, x1, ..., xm-1].
+ * @return True if a new combination was successfully generated, false if finished.
+ */
+fun nextCombination(combinations: MutableList<Int>): Boolean {
+
+    val i = combinations.indexOfLast { it != 0 }
+
+
+    if (i <= 0) {
+        return false
+    }
+
+    val v = combinations[i]
+    combinations[i - 1] += 1
+    combinations[i] = 0
+    combinations[combinations.size - 1] += v - 1
+
+    return true
+}
+
+/**
+ * Solves the joltage system using an optimized recursive search (DFS with pruning).
+ * * @param joltage The current remaining target joltage vector (j).
+ * @param availableButtonsMask Bitmask indicating which buttons are still free to use.
+ * @param buttons The list of button masks (b_i).
+ * @return The minimum number of presses required from this state, or Int.MAX_VALUE if impossible.
+ */
+fun dfsPart2(joltage: List<Int>, availableButtonsMask: Int, buttons: List<Int>): Int {
+
+    if (joltage.all { it == 0 }) {
+        return 0
+    }
+
+    val numCounters = joltage.size
+
+
+    var minMatchingButtonsCount = Int.MAX_VALUE
+    var pivotCounterIndex = -1
+    var pivotJoltage = 0
+
+    for (i in 0 until numCounters) {
+        val target = joltage[i]
+        if (target > 0) {
+
+            val matchingCount = buttons.indices.count { j ->
+                isButtonAvailable(j, availableButtonsMask) &&
+                        (buttons[j] and (1 shl i)) != 0
+            }
+
+            if (matchingCount < minMatchingButtonsCount) {
+                minMatchingButtonsCount = matchingCount
+                pivotCounterIndex = i
+                pivotJoltage = target
+            }
+        }
+    }
+
+
+
+    if (pivotCounterIndex == -1 || minMatchingButtonsCount == 0) return Int.MAX_VALUE
+
+
+    val matchingButtons = buttons.indices
+        .filter { j ->
+            isButtonAvailable(j, availableButtonsMask) &&
+                    (buttons[j] and (1 shl pivotCounterIndex)) != 0
+        }
+        .map { j -> j to buttons[j] }
+        .toList()
+
+
+    var newMask = availableButtonsMask
+    matchingButtons.forEach { (index, _) ->
+        newMask = newMask and (1 shl index).inv()
+    }
+
+    var minResult = Int.MAX_VALUE
+    val numMatching = matchingButtons.size
+
+
+    val counts = MutableList(numMatching) { 0 }
+    counts[numMatching - 1] = pivotJoltage
+
+
+
+    combinationsLoop@ do {
+
+        val newJoltage = joltage.toMutableList()
+        var totalPresses = 0
+        var good = true
+
+        for (i in 0 until numMatching) {
+            val count = counts[i]
+            if (count == 0) continue
+
+            val (_, buttonMask) = matchingButtons[i]
+            totalPresses += count
+
+
+            for (k in 0 until numCounters) {
+
+                if ((buttonMask and (1 shl k)) != 0) {
+                    if (newJoltage[k] >= count) {
+                        newJoltage[k] -= count
+                    } else {
+
+                        good = false
+
+
+                        break
+                    }
+                }
+            }
+            if (!good) break
+        }
+
+        if (good) {
+
+            val r = dfsPart2(newJoltage, newMask, buttons)
+
+            if (r != Int.MAX_VALUE) {
+                minResult = minOf(minResult, totalPresses + r)
+            }
+        }
+
+    } while (nextCombination(counts))
+
+    return minResult
+}
+
+
+fun getFewestPressesPart2DFS(machines: ArrayList<ManualLine>): Int {
+    var totalPresses = 0
+
+    machines.forEachIndexed { idx, machine ->
+        val numButtons = machine.buttons.size
+
+        val initialMask = (1 shl numButtons) - 1
+
+
+        val minPresses = dfsPart2(machine.joltages, initialMask, machine.buttons)
+
+        if (minPresses != Int.MAX_VALUE) {
+
+            totalPresses += minPresses
+        } else {
+
+        }
+    }
+
+    return totalPresses
+}
+
+
 fun main() {
     val machines = readFile("./src/main/resources/file.txt")
-    val totalPresses = getFewestPresses(machines)
-    println("Total minimum button presses: $totalPresses")
+
+    val totalPressesPart2 = getFewestPressesPart2DFS(machines)
+    println("Total minimum joltage button presses (Part 2): $totalPressesPart2")
 }
 
 
